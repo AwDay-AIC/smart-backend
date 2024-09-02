@@ -3,6 +3,7 @@ import os
 import libsql_experimental as libsql
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 # from unsloth import FastLanguageModel
 
 load_dotenv()
@@ -105,6 +106,18 @@ def smart_recommendation_skill(user_resume: str, job_desc: str):
 #     return json.loads(outputs_str)
     pass
 
+origins = [
+    "*",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Smart Applicant Filter
 @app.get('/nn/saf')
 def saf(payload: str):
@@ -120,3 +133,29 @@ def sjf(payload: str):
 def srs(user_resume: str, job_desc: str):
     return smart_recommendation_skill(user_resume, job_desc)
 
+@app.get('/job-vacancies')
+def job_vacancies():
+    q = 'SELECT * FROM job_vacancies JOIN companies ON job_vacancies.company_id = companies.id'
+    data = conn.execute(q).fetchall()
+    outs = []
+    for d in data:
+        out = {
+            'id': d[0],
+            'company_id': d[1],
+            'name': d[2],
+            'description': d[3],
+            'requirement': d[4],
+            'created_at': d[5],
+            'updated_at': d[6],
+            'company': {
+                'id': d[7],
+                'user_id': d[8],
+                'about': d[9],
+                'location': d[10],
+                'created_at': d[11],
+                'updated_at': d[12],
+            },
+        }
+        outs.append(out)
+
+    return outs 
